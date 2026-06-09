@@ -1,11 +1,34 @@
 import * as admin from "firebase-admin";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { GoogleAuth } from "google-auth-library";
 
 admin.initializeApp();
 const db = admin.firestore();
 
 const AGENT_URL = process.env.AGENT_URL ?? "http://localhost:8080";
+
+// Comma-separated allowlist. While the app is private, only these accounts
+// may call any function; leave unset to allow any authenticated user.
+const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS ?? "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+/** Rejects unauthenticated or non-allowlisted callers; returns the caller's uid. */
+function requireAllowedUser(request: CallableRequest): string {
+  const auth = request.auth;
+  if (!auth) {
+    throw new HttpsError("unauthenticated", "Sign in required");
+  }
+  const email = (auth.token.email ?? "").toLowerCase();
+  if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(email)) {
+    throw new HttpsError("permission-denied", "This app is invite-only");
+  }
+  return auth.uid;
+}
+
+const googleAuth = new GoogleAuth();
 
 interface AgentRunResponse {
   coach_reply: string;
@@ -20,9 +43,17 @@ interface VerifyPhotoResponse {
 }
 
 async function callAgent<T>(path: string, body: unknown): Promise<T> {
+  // The agent runs as a private Cloud Run service; authenticate with an
+  // IAM identity token (skipped for plain-http local dev).
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (AGENT_URL.startsWith("https://")) {
+    const client = await googleAuth.getIdTokenClient(AGENT_URL);
+    const idHeaders = await client.getRequestHeaders();
+    headers["Authorization"] = idHeaders.get("Authorization") ?? "";
+  }
   const res = await fetch(`${AGENT_URL}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -36,13 +67,13 @@ async function callAgent<T>(path: string, body: unknown): Promise<T> {
  * Runs the LangGraph agent, persists the AI reply, updates the streak.
  */
 export const checkIn = onCall(async (request) => {
-  const { user_id, message, photo_url } = request.data as {
-    user_id: string;
+  const user_id = requireAllowedUser(request);
+  const { message, photo_url } = request.data as {
     message: string;
     photo_url?: string;
   };
-  if (!user_id || (!message && !photo_url)) {
-    throw new HttpsError("invalid-argument", "user_id and message or photo_url required");
+  if (!message && !photo_url) {
+    throw new HttpsError("invalid-argument", "message or photo_url required");
   }
 
   const userRef = db.collection("users").doc(user_id);
@@ -109,12 +140,10 @@ export const checkIn = onCall(async (request) => {
  * verifyPhoto — standalone photo verification (premium feature).
  */
 export const verifyPhoto = onCall(async (request) => {
-  const { user_id, photo_url } = request.data as {
-    user_id: string;
-    photo_url: string;
-  };
-  if (!user_id || !photo_url) {
-    throw new HttpsError("invalid-argument", "user_id and photo_url required");
+  const user_id = requireAllowedUser(request);
+  const { photo_url } = request.data as { photo_url: string };
+  if (!photo_url) {
+    throw new HttpsError("invalid-argument", "photo_url required");
   }
   return callAgent<VerifyPhotoResponse>("/verify-photo", { user_id, photo_url });
 });
