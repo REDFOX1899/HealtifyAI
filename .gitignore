@@ -1,0 +1,23 @@
+# Secrets
+.env
+**/google-services.json
+**/serviceAccountKey.json
+
+# Node
+node_modules/
+functions/lib/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Flutter
+flutter_app/.dart_tool/
+flutter_app/build/
+flutter_app/.flutter-plugins*
+flutter_app/.packages
+flutter_app/android/.gradle/
+flutter_app/android/local.properties
+flutter_app/ios/Pods/

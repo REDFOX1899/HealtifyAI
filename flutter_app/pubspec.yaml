@@ -1,0 +1,33 @@
+name: hydrateai
+description: AI-powered hydration accountability coach.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^3.8.0
+  firebase_auth: ^5.3.0
+  cloud_firestore: ^5.5.0
+  firebase_messaging: ^15.1.0
+  firebase_storage: ^12.3.0
+  cloud_functions: ^5.1.0
+  purchases_flutter: ^8.2.0
+  flutter_riverpod: ^2.6.0
+  image_picker: ^1.1.0
+  http: ^1.2.0
+  intl: ^0.19.0
+  google_sign_in: ^6.2.0
+  flutter_local_notifications: ^18.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  fake_cloud_firestore: ^3.0.0
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
