@@ -4,7 +4,7 @@ service firebase.storage {
     // Private beta: only the owner's account may use the app at all.
     function isAllowedAccount() {
       return request.auth != null
-        && request.auth.token.email in ['shantanupatil1899@gmail.com'];
+        && request.auth.token.email in ['shantanupatil1899@gmail.com', 'patilshantanu1899@gmail.com'];
     }
     // Users may only upload/read their own photos.
     match /users/{userId}/{allPaths=**} {
