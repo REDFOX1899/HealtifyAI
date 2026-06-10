@@ -21,3 +21,4 @@ flutter_app/.packages
 flutter_app/android/.gradle/
 flutter_app/android/local.properties
 flutter_app/ios/Pods/
+firebase-debug.log*
