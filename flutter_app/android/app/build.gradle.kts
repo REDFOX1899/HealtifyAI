@@ -44,6 +44,9 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            // Keep Firebase plugin channels intact in release builds.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
