@@ -57,4 +57,7 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Required by firebase-auth's reCAPTCHA flow; missing it crashes
+    // signIn/createUser natively, surfacing as pigeon channel-error.
+    implementation("androidx.browser:browser:1.8.0")
 }
